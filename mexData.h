@@ -7,27 +7,60 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <time.h>
 #include <errno.h>
 #include <string.h>
+#include <fcntl.h>
+
+
+typedef struct mexInfo_{
+	int usId;
+	time_t timeM;
+}mexInfo;
 
 typedef struct mex_{
-	int UsId;
-	time_t timeM;
+	mexInfo info;
 	char* text;
+	struct mex_ *next;
 }mex;
 
-typedef struct conversation_{
+typedef struct convInfo_{
 	int nMex;
-	mex *conv
+	time_t timeCreate;
+	int adminId;
+}convInfo;
+
+
+typedef struct conversation_{
+	convInfo head;
+	mex *mexList;      //per permettere un add più semplice e variabile è gestita a liste
+	FILE *stream;
 }conversation;
 
 
 ///Prototipi
-time_t currTimeSys();
-char * timeString(time_t *t);
+
+//Funzioni di interfaccia
+
+conversation *initConv(char *path,int adminId);
+FILE *openConf(char* path);
+int setUpConvF(int adminId,FILE *stream);
+int overrideHeadF(convInfo *cI, FILE *stream);
 int saveMexF(mex *m, FILE *stream);
-int fWriteMex(FILE *stream,size_t sizeElem, int nelem,void *data);
+conversation *loadConvF(FILE *stream);
+
+//Funzioni di supporto
+int fWriteF(FILE *stream,size_t sizeElem, int nelem,void *data);
+int fReadF(FILE *stream,size_t sizeElem, int nelem,void *save);
+time_t currTimeSys();
+
+//Funzioni di visualizzazione
+void printConv(conversation *c);
+void printMex(mex *m);
+void printConvInfo(convInfo *cI);
+char * timeString(time_t t);
+
 
 
 
@@ -43,9 +76,15 @@ int fWriteMex(FILE *stream,size_t sizeElem, int nelem,void *data);
  *
  * (i numeri sono i valori decimali dell'equivalente ascii)
  *
- * /---|----|-----|---|-----------|----|---\
- * | 1 | Id | Ora | 2 |   TEXT    |'\0'| 3 |
- * \---|----|-----|---|-----------|----|---/
+ * /---|----|-----|---|-----------|----\
+ * | 1 | Id | Ora | 2 |   TEXT    |'\0'|
+ * \---|----|-----|---|-----------|----/
+ *
+ *          OPPURE
+ *
+ * /----|-----|-----------|----\
+ * | Id | Ora |   TEXT    |'\0'|       IN USO PER ORA
+ * \----|-----|-----------|----/
  *
  * -1: in ascii indica "Start Of Heading"
  * -2: in ascii indica "Start Of Text"
@@ -53,4 +92,12 @@ int fWriteMex(FILE *stream,size_t sizeElem, int nelem,void *data);
  *
  * (Opzionale)
  * -4: in ascii indica "End of Trasmission"
+ *
+ * essendo noi al lavoro su file, quindi siamo sicuri della struttura
+ * ogni nuovo 1 è un nuovo messaggio dal quale scopriamo Id e time_t
+ * mentre dopo un 2 andiamo a copiare la stringa con strcpy
+ *
+ *
+ * In testa al file è presente un piccolo spazio in memoria dove sono presenti i metadati
+ * della conversazione, tipo ora di creazione, amministratore, e numero messaggi presenti
  */
