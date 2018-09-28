@@ -58,6 +58,37 @@ int setUpConvF(int adminId,FILE *stream)
 	return 0;
 }
 
+int addMex(conversation *c, mex *m)
+{
+	if(saveNewMexF(m, c->stream))
+	{
+		perror("error during write :");
+		return -1;
+	}
+	c->head.nMex++;
+	c->mexList=reallocarray(c->mexList,c->head.nMex, sizeof(mex *));
+	if(overrideHeadF(&c->head,c->stream))
+	{
+		return -1;
+	}
+	return 0;
+}
+
+mex *makeMex(char *text,int info)
+{
+	/// text su un buf temporaneo
+	mex *m=malloc(sizeof(mex));
+	if (m==NULL)
+	{
+		return NULL;
+	}
+	m->info.usId=info;
+	m->info.timeM=currTimeSys();
+	m->text=malloc(strlen(text)+1);
+	strcpy(m->text,text);
+	return m;
+}
+
 int overrideHeadF(convInfo *cI, FILE *stream)
 {
 	flockfile(stream);
@@ -74,7 +105,9 @@ int overrideHeadF(convInfo *cI, FILE *stream)
 	return 0;
 }
 
-int saveMexF(mex *m, FILE *stream)
+
+
+int saveNewMexF(mex *m, FILE *stream)
 {
 	/// Scrive in maniera atomica rispetto al Processo
 	int lenText =strlen(m->text)+1;
@@ -156,25 +189,12 @@ conversation *loadConvF(FILE *stream)
 		//non sono presenti messaggi e ho una conversazione vuota
 		return conv;
 	}
-
+	conv->mexList=calloc(conv->head.nMex, sizeof(mex *));   //creo un array di puntatori a mex
+	mex *mexNode;
 	size_t len;
-	mex *mexNode=malloc(sizeof(mex));
-	mex *mexNodeOld;
-	conv->mexList=mexNode;
-
-	///Copio i metadati
-	memcpy(mexNode,dataPoint, sizeof(mexInfo));
-	dataPoint +=sizeof(mexInfo);
-	///Crea in ram la stringa di dim arbitraria e mex la punta
-	len=strlen(dataPoint)+1;
-	mexNode->text=malloc(len);
-	strcpy(mexNode->text,dataPoint);
-	dataPoint+=len;
-	mexNodeOld=mexNode;
-
-	for(int i=1;i<conv->head.nMex;i++)
+	for(int i=0;i<conv->head.nMex;i++)
 	{
-		///genero un nuovo nodo della lista
+		///genero un nuovo nodo dei messaggi in ram
 		mexNode=malloc(sizeof(mex));
 
 		///Copio i metadati
@@ -185,14 +205,7 @@ conversation *loadConvF(FILE *stream)
 		mexNode->text=malloc(len);
 		strcpy(mexNode->text,dataPoint);
 		dataPoint+=len;
-		//la vecchia punta la nuova
-		mexNodeOld->next=mexNode;
-		//la nuova diventa vecchia
-		mexNodeOld=mexNode;
 	}
-	mexNode->next=0;
-	return conv;
-
 }
 
 //Funzioni di supporto
@@ -244,6 +257,26 @@ time_t currTimeSys()
 	return current_time;
 }
 
+int endConv(conversation *c)
+{
+	//libero tutti i messaggi
+	for(int i=0; i<c->head.nMex; i++)
+	{
+		freeMex(c->mexList[i]);
+	}
+	fclose(c->stream);
+	free(c);    //dopo aver liberato e chiuso tutto libero la memoria
+	return 0;
+}
+
+int freeMex(mex *m)
+{
+	free(m->text);
+	free(m);
+	return 0;
+}
+
+
 //Funzioni di visualizzazione
 
 void printConv(conversation *c)
@@ -254,15 +287,14 @@ void printConv(conversation *c)
 	printf("\n\t[][]La Conversazione è:[][]\n\n");
 	printConvInfo(&c->head);
 
-	mex *currMex=c->mexList;
+	//mex *currMex=c->mexList;
 	printf("##########\n\n");
 
-	for(int i=0; currMex!=NULL; currMex=currMex->next)
+	for(int i=0; i<c->head.nMex; i++)
 	{
 		printf("--->Mex[%d]:",i);
-		printMex(currMex);
+		printMex(c->mexList[i]);
 		printf("**********\n");
-		i++;
 	}
 	printf("-------------------------------------------------------------\n");
 	return;
@@ -279,7 +311,6 @@ void printMex(mex *m)
 	printf("Mex data Store:\n");
 	printf("info.usId\t\t-> %d\n",m->info.usId);
 	printf("timeM\t\t-> %s",timeString(m->info.timeM));
-	printf("Next\t\t-> %p\n",m->next);
 	if(m->text!=NULL)
 	{
 		printf("Text:\n%s\n",m->text);

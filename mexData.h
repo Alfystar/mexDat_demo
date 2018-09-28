@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
+#include <malloc.h>
+
 
 
 typedef struct mexInfo_{
@@ -22,7 +24,6 @@ typedef struct mexInfo_{
 typedef struct mex_{
 	mexInfo info;
 	char* text;
-	struct mex_ *next;
 }mex;
 
 typedef struct convInfo_{
@@ -34,7 +35,7 @@ typedef struct convInfo_{
 
 typedef struct conversation_{
 	convInfo head;
-	mex *mexList;      //per permettere un add più semplice e variabile è gestita a liste
+	mex **mexList;      //per permettere un add più semplice e variabile è gestita a liste
 	FILE *stream;
 }conversation;
 
@@ -46,14 +47,19 @@ typedef struct conversation_{
 conversation *initConv(char *path,int adminId);
 FILE *openConf(char* path);
 int setUpConvF(int adminId,FILE *stream);
+int addMex(conversation *conversation, mex *message);
+mex *makeMex(char *text,int info);
 int overrideHeadF(convInfo *cI, FILE *stream);
-int saveMexF(mex *m, FILE *stream);
+int saveNewMexF(mex *m, FILE *stream);
 conversation *loadConvF(FILE *stream);
 
 //Funzioni di supporto
 int fWriteF(FILE *stream,size_t sizeElem, int nelem,void *data);
 int fReadF(FILE *stream,size_t sizeElem, int nelem,void *save);
 time_t currTimeSys();
+int endConv(conversation *c);
+int freeMex(mex *m);
+
 
 //Funzioni di visualizzazione
 void printConv(conversation *c);
@@ -100,4 +106,24 @@ char * timeString(time_t t);
  *
  * In testa al file è presente un piccolo spazio in memoria dove sono presenti i metadati
  * della conversazione, tipo ora di creazione, amministratore, e numero messaggi presenti
+ *
+ *
+ *
+ * CONVERSTION TYPE STRUCTURE:
+ *
+ *    --------------
+ *    |    HEAD    |       [0]         [1]         [2]         [3]
+ *    --------------     _______     _______     _______     _______
+ *    | **MexList  | -->| *mex1 |-->| *mex2 |-->| *mex3 |-->| *mex3 |
+ *    --------------        |               \      |               \
+ *    |  *Stream   |        |                \     |                \
+ *    --------------        |                 \    |                 \
+ *                          |   -------------- \   |   -------------- \
+ *                          \-->|    DATA 1  |  \  \-->|    DATA 3  |  \
+ *                              --------------   |     --------------   |
+ *                                               +                      +
+ *                                         --------------         --------------
+ *                                         |    DATA 2  |         |    DATA 4  |
+ *                                         --------------         --------------
+ *
  */
