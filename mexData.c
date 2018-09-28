@@ -4,7 +4,7 @@
 
 #include "mexData.h"
 
-//Funzioni di interfaccia
+///Funzioni di interfaccia
 
 conversation *initConv(char *path,int adminId)
 {
@@ -48,16 +48,6 @@ FILE *openConf(char* path)
 
 }
 
-int setUpConvF(int adminId,FILE *stream)
-{
-	conversation newCon;
-	newCon.head.adminId=adminId;
-	newCon.head.nMex=0;
-	newCon.head.timeCreate=currTimeSys();
-	overrideHeadF(&newCon.head,stream);
-	return 0;
-}
-
 int addMex(conversation *c, mex *m)
 {
 	if(saveNewMexF(m, c->stream))
@@ -74,7 +64,7 @@ int addMex(conversation *c, mex *m)
 	return 0;
 }
 
-mex *makeMex(char *text,int info)
+mex *makeMex(char *text,int usId)
 {
 	/// text su un buf temporaneo
 	mex *m=malloc(sizeof(mex));
@@ -82,11 +72,43 @@ mex *makeMex(char *text,int info)
 	{
 		return NULL;
 	}
-	m->info.usId=info;
+	m->info.usId=usId;
 	m->info.timeM=currTimeSys();
 	m->text=malloc(strlen(text)+1);
 	strcpy(m->text,text);
 	return m;
+}
+
+int endConv(conversation *c)
+{
+
+	//libero tutti i messaggi
+	for(int i=0; i<c->head.nMex; i++)
+	{
+		freeMex(c->mexList[i]);
+	}
+	fclose(c->stream);
+	free(c);    //dopo aver liberato e chiuso tutto libero la memoria
+	return 0;
+}
+
+///Funzioni verso File
+
+int setUpConvF(int adminId,FILE *stream)
+{
+	struct stat streamInfo;
+	fstat(fileno(stream), &streamInfo);
+	if(streamInfo.st_size!=0)     //il file era già esistente e contiene dei dati
+	{
+		errno=EEXIST; //file descriptor non valido, perchè il file contiene già qualcosa
+		return -1;
+	}
+	conversation newCon;
+	newCon.head.adminId=adminId;
+	newCon.head.nMex=0;
+	newCon.head.timeCreate=currTimeSys();
+	overrideHeadF(&newCon.head,stream);
+	return 0;
 }
 
 int overrideHeadF(convInfo *cI, FILE *stream)
@@ -105,48 +127,19 @@ int overrideHeadF(convInfo *cI, FILE *stream)
 	return 0;
 }
 
-
-
 int saveNewMexF(mex *m, FILE *stream)
 {
 	/// Scrive in maniera atomica rispetto al Processo
-	int lenText =strlen(m->text)+1;
-	//char tag[4]={1,2,3,4};
+	size_t lenText =strlen(m->text)+1;
 
-	/*
-	 * -1: in ascii indica "Start Of Heading"
-	 * -2: in ascii indica "Start Of Text"
-	 * -3: in ascii indica "End Of Text"
-	 */
 	flockfile(stream);
 	fseek(stream,0,SEEK_END); //mi porto alla fine per aggiungere
-	/*
-	///start Header tag
-	if(fWriteF(stream, 1,1,&tag[0]))
-	{
-		funlockfile(stream);
-		return -1;
-	}
-	*/
-	if(fWriteF(stream, sizeof(m->info.usId),1,m->info.usId))
-	{
-		funlockfile(stream);
-		return -1;
-	}
 
-	if(fWriteF(stream, sizeof(m->info.timeM),1,m->info.timeM))
+	if(fWriteF(stream, sizeof(m->info),1,&m->info))
 	{
 		funlockfile(stream);
 		return -1;
 	}
-	/*
-	/// start mesage tag
-	if(fWriteF(stream, 1,1,&tag[1]))
-	{
-		funlockfile(stream);
-		return -1;
-	}
-	 */
 	if(fWriteF(stream, lenText,1,m->text))
 	{
 		funlockfile(stream);
@@ -187,6 +180,7 @@ conversation *loadConvF(FILE *stream)
 	if(streamInfo.st_size== sizeof(conv->head))
 	{
 		//non sono presenti messaggi e ho una conversazione vuota
+		printf("File con solo testa\n");
 		return conv;
 	}
 	conv->mexList=calloc(conv->head.nMex, sizeof(mex *));   //creo un array di puntatori a mex
@@ -205,10 +199,17 @@ conversation *loadConvF(FILE *stream)
 		mexNode->text=malloc(len);
 		strcpy(mexNode->text,dataPoint);
 		dataPoint+=len;
+
+		conv->mexList[i]=mexNode;   //salvo il puntatore nell'array
+		/*
+		printf("\nil nuovo messaggio creato è:\n");
+		printMex(mexNode);
+		*/
 	}
+	return conv;
 }
 
-//Funzioni di supporto
+///Funzioni di supporto
 
 int fWriteF(FILE *f,size_t sizeElem, int nelem,void *dat)
 {
@@ -222,6 +223,7 @@ int fWriteF(FILE *f,size_t sizeElem, int nelem,void *dat)
 			errno=EBADFD;   //file descriptor in bad state
 			return -1;
 		}
+		//printf("prima fwrite; dat=%p\n",dat);
 		cont += fwrite(dat+cont, 1, sizeElem*nelem-cont, f);
 	}
 	return 0;
@@ -244,6 +246,13 @@ int fReadF(FILE *f,size_t sizeElem, int nelem,void *save)
 	return 0;
 }
 
+int freeMex(mex *m)
+{
+	free(m->text);
+	free(m);
+	return 0;
+}
+
 time_t currTimeSys()
 {
 	time_t current_time;
@@ -257,34 +266,14 @@ time_t currTimeSys()
 	return current_time;
 }
 
-int endConv(conversation *c)
-{
-
-	//libero tutti i messaggi
-	for(int i=0; i<c->head.nMex; i++)
-	{
-		freeMex(c->mexList[i]);
-	}
-	fclose(c->stream);
-	free(c);    //dopo aver liberato e chiuso tutto libero la memoria
-	return 0;
-}
-
-int freeMex(mex *m)
-{
-	free(m->text);
-	free(m);
-	return 0;
-}
-
-
-//Funzioni di visualizzazione
+///Funzioni di visualizzazione
 
 void printConv(conversation *c)
 {
 	printf("-------------------------------------------------------------\n");
 	printf("\tLa Conversazione ha salvati i seguenti messaggi:\n");
 	printf("\tsizeof(mex)=%d\tsizeof(mexInfo)=%d\tsizeof(convInfo)=%d\n",sizeof(mex),sizeof(mexInfo),sizeof(convInfo));
+	printf("FILE stream pointer\t-> %p\n",c->stream);
 	printf("\n\t[][]La Conversazione è:[][]\n\n");
 	printConvInfo(&c->head);
 
@@ -293,7 +282,7 @@ void printConv(conversation *c)
 
 	for(int i=0; i<c->head.nMex; i++)
 	{
-		printf("--->Mex[%d]:",i);
+		printf("--->Mex[%d]:\n",i);
 		printMex(c->mexList[i]);
 		printf("**********\n");
 	}
@@ -309,18 +298,15 @@ void printMex(mex *m)
 	m->info.timeM
 	m->next
 	 */
-	printf("Mex data Store:\n");
-	printf("info.usId\t\t-> %d\n",m->info.usId);
-	printf("timeM\t\t-> %s",timeString(m->info.timeM));
+	printf("Mex data Store locate in=%p:\n",m);
+	printf("info.usId\t-> %d\n",m->info.usId);
+	printf("time Message\t-> %s",timeString(m->info.timeM));
 	if(m->text!=NULL)
 	{
-		printf("Text:\n%s\n",m->text);
+		printf("Text:\n-->  %s\n",m->text);
 	} else{
 		printf("Text: ##Non Presente##\n");
 	}
-
-
-	return;
 }
 
 void printConvInfo(convInfo *cI)
@@ -330,8 +316,10 @@ void printConvInfo(convInfo *cI)
 	cI->adminId
 	cI->timeCreate
 	*/
-	printf("#1\tConversation info data Store:\nnMess\t\t-> %d\nadminId\t\t-> %d\nTime Creat\t-> %s\n",cI->nMex,cI->adminId,timeString(cI->timeCreate));
-	return;
+	printf("#1\tConversation info data Store:\n");
+	printf("nMess\t\t-> %d\n",cI->nMex);
+	printf("adminId\t\t-> %d\n",cI->adminId);
+	printf("Time Creat\t-> %s\n",timeString(cI->timeCreate));
 }
 
 

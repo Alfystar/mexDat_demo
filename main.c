@@ -14,13 +14,13 @@ int main(int argc, char* argv[])
 	if(argc >=2)
 	{
 		c = initConv(argv[1], atoi(argv[2]));
+		if(c==NULL)
+		{
+			printf("Errore nell'aprire la conversazione\n");
+			exit(-1);
+		}
 	}
 
-	if(c==NULL)
-	{
-		printf("Errore nell'aprire la conversazione\n");
-		exit(-1);
-	}
 	if(argc>=3) //seleziona comando
 	{
 		if (strcmp(argv[2], "p") == 0)
@@ -50,6 +50,7 @@ int main(int argc, char* argv[])
 				perror("Error make Mex:");
 				exit(-1);
 			}
+			//printMex(m);
 			if(addMex(c, m))
 			{
 				perror("add entry take error:");
@@ -75,12 +76,11 @@ void help()
 	printf("Parameter List:");
 	printf("\n(0)arg\n");
 	printf("\tp\t\tPrinta il file indicato\n");
-	printf("\tc\t\tComprime il file indicato eliminando le entry Empty\n");
-	printf("(1)arg\n");
+	/*printf("(1)arg\n");
 	printf("\td [index]\tElimina nel file la entry indicata\n");
 	printf("\ts [Name]\tCerca a quale entry si trova il nome cercato\n");
+	*/
 	printf("(2)arg\n");
-	printf("\ta [Name] [index]\tAggiunge una entry con questi parametri alla Tabella\n");
-	printf("\tsf [Name] [Start index]\tCerca a quale entry si trova il nome cercato partendo da [Start Index]\n");
+	printf("\ta [Text Message] [usId]\tAggiunge una entry con questi parametri alla Tabella\n");
 
 }

@@ -40,28 +40,30 @@ typedef struct conversation_{
 }conversation;
 
 
-///Prototipi
+/**		 Prototipi 		**/
 
-//Funzioni di interfaccia
+///Funzioni di interfaccia
 
 conversation *initConv(char *path,int adminId);
 FILE *openConf(char* path);
-int setUpConvF(int adminId,FILE *stream);
 int addMex(conversation *conversation, mex *message);
-mex *makeMex(char *text,int info);
+mex *makeMex(char *text,int usId);
+int endConv(conversation *c);
+
+
+///Funzioni verso File
+int setUpConvF(int adminId,FILE *stream);
 int overrideHeadF(convInfo *cI, FILE *stream);
 int saveNewMexF(mex *m, FILE *stream);
 conversation *loadConvF(FILE *stream);
 
-//Funzioni di supporto
+///Funzioni di supporto
 int fWriteF(FILE *stream,size_t sizeElem, int nelem,void *data);
 int fReadF(FILE *stream,size_t sizeElem, int nelem,void *save);
-time_t currTimeSys();
-int endConv(conversation *c);
 int freeMex(mex *m);
+time_t currTimeSys();
 
-
-//Funzioni di visualizzazione
+///Funzioni di visualizzazione
 void printConv(conversation *c);
 void printMex(mex *m);
 void printConvInfo(convInfo *cI);
@@ -82,15 +84,9 @@ char * timeString(time_t t);
  *
  * (i numeri sono i valori decimali dell'equivalente ascii)
  *
- * /---|----|-----|---|-----------|----\
- * | 1 | Id | Ora | 2 |   TEXT    |'\0'|
- * \---|----|-----|---|-----------|----/
- *
- *          OPPURE
- *
- * /----|-----|-----------|----\
- * | Id | Ora |   TEXT    |'\0'|       IN USO PER ORA
- * \----|-----|-----------|----/
+ *    Scartato              /---|----|-----|---|-----------|----\
+ *    poichè tropo          | 1 | Id | Ora | 2 |   TEXT    |'\0'|
+ *    complicato            \---|----|-----|---|-----------|----/
  *
  * -1: in ascii indica "Start Of Heading"
  * -2: in ascii indica "Start Of Text"
@@ -98,6 +94,14 @@ char * timeString(time_t t);
  *
  * (Opzionale)
  * -4: in ascii indica "End of Trasmission"
+ *
+ *          OPPURE
+ *
+ * (+)(+)(+)   /----|-----|-----------|----\
+ * (+)(+)(+)   | Id | Ora |   TEXT    |'\0'|       IN USO PER ORA
+ * (+)(+)(+)   \----|-----|-----------|----/
+ *
+
  *
  * essendo noi al lavoro su file, quindi siamo sicuri della struttura
  * ogni nuovo 1 è un nuovo messaggio dal quale scopriamo Id e time_t
@@ -109,7 +113,7 @@ char * timeString(time_t t);
  *
  *
  *
- * CONVERSTION TYPE STRUCTURE:
+ * CONVERSATION TYPE STRUCTURE:
  *
  *    --------------
  *    |    HEAD    |       [0]         [1]         [2]         [3]
@@ -125,5 +129,9 @@ char * timeString(time_t t);
  *                                         --------------         --------------
  *                                         |    DATA 2  |         |    DATA 4  |
  *                                         --------------         --------------
+ *
+ * Nel file viene salvata la testa e i dati puntati da mexList vengono incolonnati uno dietro l'altro
+ * la forma di ogni DATA è quella dei messaggi sopra descritti, HEDER+Text, e in lettura si fa il procedimento
+ * opposto per ottenere una struttura di tipo conversation
  *
  */
