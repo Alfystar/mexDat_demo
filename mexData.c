@@ -259,6 +259,7 @@ time_t currTimeSys()
 
 int endConv(conversation *c)
 {
+
 	//libero tutti i messaggi
 	for(int i=0; i<c->head.nMex; i++)
 	{
