@@ -50,7 +50,6 @@ int main(int argc, char* argv[])
 				perror("Error make Mex:");
 				exit(-1);
 			}
-			//printMex(m);
 			if(addMex(c, m))
 			{
 				perror("add entry take error:");
