@@ -32,7 +32,7 @@ conversation *initConv(char *path,int adminId)
 //todo da testare
 conversation *openConf(char * convPath)
 {
-	FILE *f=openConfStream(convPath)
+	FILE *f=openConfStream(convPath);
 	if (f == NULL) {
 		perror("tab open error:");
 		return NULL;
