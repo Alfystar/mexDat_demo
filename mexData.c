@@ -9,7 +9,7 @@
 conversation *initConv(char *path,int adminId)
 {
 	conversation c;
-	c.stream=openConf(path);
+	c.stream= openConfStream(path);
 	if(setUpConvF(adminId,c.stream))
 	{
 		char buf[128]; // buff per creare la tringa di errore dinamicamente
@@ -29,8 +29,19 @@ conversation *initConv(char *path,int adminId)
 
 	return loadConvF(c.stream);
 }
+//todo da testare
+conversation *openConf(char * convPath)
+{
+	FILE *f=openConfStream(convPath)
+	if (f == NULL) {
+		perror("tab open error:");
+		return NULL;
+	}
+	return loadConvF(f);
+}
 
-FILE *openConf(char* path)
+
+FILE *openConfStream(char *path)
 {
 	int confFd=open(path,O_RDWR|O_CREAT,0666);
 	if(confFd==-1)
@@ -47,6 +58,7 @@ FILE *openConf(char* path)
 	return f;
 
 }
+
 
 int addMex(conversation *c, mex *m)
 {

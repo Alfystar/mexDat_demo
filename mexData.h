@@ -48,7 +48,8 @@ typedef struct conversation_{
 ///Funzioni di interfaccia
 
 conversation *initConv(char *path,int adminId);
-FILE *openConf(char* path);
+conversation *openConf(char * convPath);
+FILE *openConfStream(char *path);
 int addMex(conversation *conversation, mex *message);
 mex *makeMex(char *text,int usId);
 int endConv(conversation *c);
