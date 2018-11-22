@@ -42,6 +42,11 @@ typedef struct conversation_{
 	FILE *stream;
 }conversation;
 
+typedef struct conversationRam_{
+	convInfo head;
+	mex **mexList;      //per permettere un add più semplice e variabile è gestita a liste
+}convRam;
+
 
 /**		 Prototipi 		**/
 
@@ -49,6 +54,7 @@ typedef struct conversation_{
 
 conversation *initConv(char *path,int adminId);
 conversation *openConf(char * convPath);
+convRam* copyConv (conversation *c);
 FILE *openConfStream(char *path);
 int addMex(conversation *conversation, mex *message);
 mex *makeMex(char *text,int usId);
@@ -69,6 +75,7 @@ time_t currTimeSys();
 
 ///Funzioni di visualizzazione
 void printConv(conversation *c);
+void printConvRam(convRam *c);
 void printMex(mex *m);
 void printConvInfo(convInfo *cI);
 char * timeString(time_t t);

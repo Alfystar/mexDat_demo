@@ -56,9 +56,61 @@ FILE *openConfStream(char *path)
 		return NULL;
 	}
 	return f;
-
 }
 
+convRam* copyConv (conversation *c)
+{
+	convRam *cR = calloc(1, sizeof(convRam));
+	if (!cR)
+	{
+		return NULL;
+	}
+	memcpy(&cR->head, &c->head, sizeof(convInfo));
+	cR->mexList = calloc(c->head.nMex, sizeof(mex *));
+	if (!cR->mexList)
+	{
+		free(cR);
+		return NULL;
+	}
+	mex *mexNode;
+
+	for(int i=0;i<cR->head.nMex;i++)
+	{
+		///genero un nuovo nodo dei messaggi in ram
+		mexNode = malloc(sizeof(mex));
+		if (!mexNode)
+		{
+
+			for(int j=0; j<i; j++)
+			{
+				freeMex(cR->mexList[j]);
+			}
+			free(cR->mexList);
+			free(cR);
+
+			return NULL;
+		}
+		///Copio i metadati
+		memcpy(mexNode,&c->mexList[i]->info, sizeof(mexInfo));
+
+		///Crea in ram la stringa di dim arbitraria e mex la punta
+		mexNode->text = malloc(strlen(c->mexList[i]->text)+1);
+		if (!mexNode->text)
+		{
+			for(int j=0; j<i; j++)
+			{
+				freeMex(cR->mexList[j]);
+			}
+			free(cR->mexList);
+			free(cR);
+			return NULL;
+		}
+		strcpy(mexNode->text,c->mexList[i]->text);
+
+		cR->mexList[i] = mexNode;   //salvo il puntatore nell'array
+	}
+	return cR;
+}
 
 int addMex(conversation *c, mex *m)
 {
@@ -289,7 +341,27 @@ void printConv(conversation *c)
 	printf("\n\t[][]La Conversazione è:[][]\n\n");
 	printConvInfo(&c->head);
 
-	//mex *currMex=c->mexList;
+	printf("##########\n\n");
+
+	for(int i=0; i<c->head.nMex; i++)
+	{
+		printf("--->Mex[%d]:\n",i);
+		printMex(c->mexList[i]);
+		printf("**********\n");
+	}
+	printf("-------------------------------------------------------------\n");
+	return;
+}
+
+void printConvRam(convRam *c)
+{
+	printf("-------------------------------------------------------------\n");
+	printf("\tLa Conversazione ha salvati i seguenti messaggi:\n");
+	printf("\tsizeof(mex)=%d\tsizeof(mexInfo)=%d\tsizeof(convInfo)=%d\n",sizeof(mex),sizeof(mexInfo),sizeof(convInfo));
+	printf("FILE stream pointer\t-> NULL (only ram version)\n");
+	printf("\n\t[][]La Conversazione è:[][]\n\n");
+	printConvInfo(&c->head);
+
 	printf("##########\n\n");
 
 	for(int i=0; i<c->head.nMex; i++)

@@ -8,6 +8,7 @@
 #include "mexData.h"
 
 conversation *c;
+void help ();
 
 int main(int argc, char* argv[])
 {
@@ -25,6 +26,14 @@ int main(int argc, char* argv[])
 	{
 		if (strcmp(argv[2], "p") == 0)
 		{
+			printConv(c);
+			return 0;
+		}
+		if (strcmp(argv[2], "cp") == 0)
+		{
+			convRam *cp = copyConv(c);
+			printConvRam(cp);
+			printf("[][][][][][][][][][][][][][][][][][][][][][][][][][][]");
 			printConv(c);
 			return 0;
 		}
@@ -75,7 +84,10 @@ void help()
 	printf("Parameter List:");
 	printf("\n(0)arg\n");
 	printf("\tp\t\tPrinta il file indicato\n");
-	/*printf("(1)arg\n");
+	printf("\tcp \tCopia e Printa il file indicato\n");
+
+	/*
+	printf("(1)arg\n");
 	printf("\td [index]\tElimina nel file la entry indicata\n");
 	printf("\ts [Name]\tCerca a quale entry si trova il nome cercato\n");
 	*/
