@@ -336,7 +336,7 @@ void printConv(conversation *c)
 {
 	printf("-------------------------------------------------------------\n");
 	printf("\tLa Conversazione ha salvati i seguenti messaggi:\n");
-	printf("\tsizeof(mex)=%d\tsizeof(mexInfo)=%d\tsizeof(convInfo)=%d\n",sizeof(mex),sizeof(mexInfo),sizeof(convInfo));
+	printf("\tsizeof(mex)=%ld\tsizeof(mexInfo)=%ld\tsizeof(convInfo)=%ld\n",sizeof(mex),sizeof(mexInfo),sizeof(convInfo));
 	printf("FILE stream pointer\t-> %p\n",c->stream);
 	printf("\n\t[][]La Conversazione è:[][]\n\n");
 	printConvInfo(&c->head);
@@ -357,7 +357,7 @@ void printConvRam(convRam *c)
 {
 	printf("-------------------------------------------------------------\n");
 	printf("\tLa Conversazione ha salvati i seguenti messaggi:\n");
-	printf("\tsizeof(mex)=%d\tsizeof(mexInfo)=%d\tsizeof(convInfo)=%d\n",sizeof(mex),sizeof(mexInfo),sizeof(convInfo));
+	printf("\tsizeof(mex)=%ld\tsizeof(mexInfo)=%ld\tsizeof(convInfo)=%ld\n",sizeof(mex),sizeof(mexInfo),sizeof(convInfo));
 	printf("FILE stream pointer\t-> NULL (only ram version)\n");
 	printf("\n\t[][]La Conversazione è:[][]\n\n");
 	printConvInfo(&c->head);
