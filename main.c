@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
 	help();
 
 	fclose(c->stream);
-	endConv(c);
+	freeConv(c);
 	return 0;
 }
 

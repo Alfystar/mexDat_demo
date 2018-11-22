@@ -143,7 +143,7 @@ mex *makeMex(char *text,int usId)
 	return m;
 }
 
-int endConv(conversation *c)
+int freeConv(conversation *c)
 {
 
 	//libero tutti i messaggi

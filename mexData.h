@@ -58,7 +58,7 @@ convRam* copyConv (conversation *c);
 FILE *openConfStream(char *path);
 int addMex(conversation *conversation, mex *message);
 mex *makeMex(char *text,int usId);
-int endConv(conversation *c);
+int freeConv(conversation *c);
 
 
 ///Funzioni verso File
